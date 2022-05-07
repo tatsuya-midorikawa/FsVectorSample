@@ -33,6 +33,26 @@ type Benchmark () =
     total
 
   [<Benchmark>]
+  member __.Vector_add_use_while() = 
+    let mutable subtotal = Vector<int>()
+    let simdlen = Vector<int>.Count
+    let lastindex = xs.Length - (xs.Length % simdlen)
+
+    let mutable i = 0
+    while i < lastindex do 
+      subtotal <- subtotal + Vector<int>(xs, i)
+      i <- i + simdlen
+
+    let mutable total = 0
+    for i = 0 to simdlen - 1 do
+      total <- total + subtotal[i]
+
+    for i = lastindex to xs.Length - 1 do
+      total <- total + xs[i]
+
+    total
+
+  [<Benchmark>]
   member __.Vector_add_as_int64() = 
     let mutable subtotal = Vector<int64>()
     let simdlen = Vector<int>.Count
@@ -44,6 +64,30 @@ type Benchmark () =
       Vector.Widen(Vector<int>(xs, i), &l1, &l2)
       subtotal <- Vector.Add (subtotal, l1)
       subtotal <- Vector.Add (subtotal, l2)
+
+    let mutable total = 0L
+    for i = 0 to Vector<int64>.Count - 1 do
+      total <- total + subtotal[i]
+
+    for i = lastindex to xs.Length - 1 do
+      total <- total + int64 xs[i]
+
+    total
+
+  [<Benchmark>]
+  member __.Vector_add_as_int64_use_while() = 
+    let mutable subtotal = Vector<int64>()
+    let simdlen = Vector<int>.Count
+    let lastindex = xs.Length - (xs.Length % simdlen)
+    let mutable l1 = Vector<int64>()
+    let mutable l2 = Vector<int64>()
+
+    let mutable i = 0
+    while i < lastindex do 
+      Vector.Widen(Vector<int>(xs, i), &l1, &l2)
+      subtotal <- Vector.Add (subtotal, l1)
+      subtotal <- Vector.Add (subtotal, l2)
+      i <- i + simdlen
 
     let mutable total = 0L
     for i = 0 to Vector<int64>.Count - 1 do
